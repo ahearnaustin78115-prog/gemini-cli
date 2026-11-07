@@ -182,8 +182,8 @@ jobs:
         with:
           files: |
             release/darwin.arm64.my-tool.tar.gz
-            release/linux.arm64.my-tool.tar.gz
-            release/win32.arm64.my-tool.zip
+            release/linux.x64.my-tool.tar.gz
+            release/win32.x64.my-tool.zip
 ```
 
 ## Migrate an extension repository
