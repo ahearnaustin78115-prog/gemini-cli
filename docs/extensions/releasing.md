@@ -1,8 +1,8 @@
 # Release extensions
 
-Release Gemini CLI extensions to your users through a Git repository or GitHub
-Releases. This guide explains how to share your work, list it in the gallery,
-and manage updates.
+Release Antigravity CLI extensions to your users through a Git repository or
+GitHub Releases. This guide explains how to share your work, list it in the
+gallery, and manage updates.
 
 Git repository releases are the simplest approach and offer the most flexibility
 for managing development branches. GitHub Releases are more efficient for
@@ -12,19 +12,19 @@ binary files.
 
 ## List your extension in the gallery
 
-The [Gemini CLI extension gallery](https://geminicli.com/extensions/browse/)
-automatically indexes public extensions to help users discover your work. You
-don't need to submit an issue or email us to list your extension.
+The Antigravity CLI extension gallery automatically indexes public extensions to
+help users discover your work. You don't need to submit an issue or email us to
+list your extension.
 
 To have your extension automatically discovered and listed:
 
 1.  **Use a public repository:** Ensure your extension is hosted in a public
     GitHub repository.
-2.  **Add the GitHub topic:** Add the `gemini-cli-extension` topic to your
+2.  **Add the GitHub topic:** Add the `antigravity-cli-extension` topic to your
     repository's **About** section. Our crawler uses this topic to find new
     extensions.
-3.  **Place the manifest at the root:** Ensure your `gemini-extension.json` file
-    is in the absolute root of the repository or the release archive.
+3.  **Place the manifest at the root:** Ensure your `antigravity-extension.json`
+    file is in the absolute root of the repository or the release archive.
 
 Our system crawls tagged repositories daily. Once you tag your repository, your
 extension will appear in the gallery if it passes validation.
@@ -36,14 +36,14 @@ meeting the listing requirements, GitHub Code Search may not have indexed your
 repository's manifest file yet.
 
 The gallery crawler relies on GitHub Code Search to discover
-`gemini-extension.json` files across public repositories. Newly created or
+`antigravity-extension.json` files across public repositories. Newly created or
 recently pushed repositories are often indexed lazily by GitHub.
 
 To check whether GitHub has indexed your repository's manifest, run the
 following command using the GitHub CLI:
 
 ```bash
-gh api 'search/code?q=repo:<owner>/<repo>+filename:gemini-extension.json' --jq .total_count
+gh api 'search/code?q=repo:<owner>/<repo>+filename:antigravity-extension.json' --jq .total_count
 ```
 
 If the count is `0`, or if you don't use the GitHub CLI, trigger indexing
@@ -51,11 +51,11 @@ manually in your web browser:
 
 1.  Sign in to GitHub.
 2.  Navigate to
-    `https://github.com/search?q=repo%3A<owner>%2F<repo>+gemini-extension.json&type=code`
+    `https://github.com/search?q=repo%3A<owner>%2F<repo>+antigravity-extension.json&type=code`
     (replace `<owner>/<repo>` with your repository path).
 3.  If GitHub displays "This repository's code is being indexed right now", wait
     15 to 30 minutes for indexing to finish.
-4.  Re-run the search until `gemini-extension.json` appears in the search
+4.  Re-run the search until `antigravity-extension.json` appears in the search
     results.
 
 Once GitHub indexes the manifest file, the crawler will discover and index your
@@ -65,13 +65,13 @@ extension during its next scheduled cycle.
 
 Releasing through Git is the most flexible option. Create a public Git
 repository and provide the URL to your users. They can then install your
-extension using `gemini extensions install <your-repo-uri>`.
+extension using `antigravity extensions install <your-repo-uri>`.
 
 Users can optionally depend on a specific branch, tag, or commit using the
 `--ref` argument. For example:
 
 ```bash
-gemini extensions install <your-repo-uri> --ref=stable
+antigravity extensions install <your-repo-uri> --ref=stable
 ```
 
 Whenever you push commits to the referenced branch, the CLI prompts users to
@@ -95,10 +95,10 @@ Distributing extensions through
 [GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)
 provides a faster installation experience by avoiding a repository clone.
 
-Gemini CLI checks for updates by looking for the **Latest** release on GitHub.
-Users can also install specific versions using the `--ref` argument with a
-release tag. Use the `--pre-release` flag to install the latest version even if
-it isn't marked as **Latest**.
+Antigravity CLI checks for updates by looking for the **Latest** release on
+GitHub. Users can also install specific versions using the `--ref` argument with
+a release tag. Use the `--pre-release` flag to install the latest version even
+if it isn't marked as **Latest**.
 
 ### Custom pre-built archives
 
@@ -112,7 +112,7 @@ platform-independent, provide a single generic asset.
 
 #### Platform-specific archives
 
-To let Gemini CLI find the correct asset for a user's platform, use the
+To let Antigravity CLI find the correct asset for a user's platform, use the
 following naming convention:
 
 1.  **Platform and architecture-specific:**
@@ -137,8 +137,8 @@ Use these values for the placeholders:
 
 #### Archive structure
 
-Archives must be fully contained extensions. The `gemini-extension.json` file
-must be at the root of the archive. The rest of the layout should match a
+Archives must be fully contained extensions. The `antigravity-extension.json`
+file must be at the root of the archive. The rest of the layout should match a
 standard extension structure.
 
 #### Example GitHub Actions workflow
@@ -189,13 +189,13 @@ jobs:
 ## Migrate an extension repository
 
 If you move your extension to a new repository or rename it, use the
-`migratedTo` property in `gemini-extension.json` to seamlessly transition your
-users.
+`migratedTo` property in `antigravity-extension.json` to seamlessly transition
+your users.
 
 1.  **Create the new repository:** Set up your extension in its new location.
 2.  **Update the old repository:** In your original repository, update the
-    `gemini-extension.json` file to include the `migratedTo` property pointing
-    to the new repository URL, and increment the version number.
+    `antigravity-extension.json` file to include the `migratedTo` property
+    pointing to the new repository URL, and increment the version number.
     ```json
     {
       "name": "my-extension",
@@ -205,19 +205,19 @@ users.
     ```
 3.  **Release the update:** Publish this new version in your old repository.
 
-When users check for updates, Gemini CLI detects the `migratedTo` field,
+When users check for updates, Antigravity CLI detects the `migratedTo` field,
 verifies the new repository, and automatically updates their local installation
 to track the new source. All settings migrate automatically.
 
 ## How updates work
 
-Gemini CLI automatically checks for extension updates based on the installation
-method. Understanding these mechanisms helps you ensure your users always have
-the latest version.
+Antigravity CLI automatically checks for extension updates based on the
+installation method. Understanding these mechanisms helps you ensure your users
+always have the latest version.
 
 ### Sync manifest and tags
 
-For GitHub releases, always ensure the `version` in `gemini-extension.json`
+For GitHub releases, always ensure the `version` in `antigravity-extension.json`
 matches your GitHub release tag. While the CLI uses tags for update detection,
 it displays the manifest version in the UI. Keeping them in sync prevents
 confusion.
@@ -235,9 +235,6 @@ The CLI uses different strategies depending on the installation type:
   commit hash with your local `HEAD`.
 - **Local extensions:** The CLI compares the `version` field in the source
   directory's manifest with the installed version.
-
-To verify an extension's installation type, inspect the `type` field in the
-metadata file at `~/.gemini/extensions/<name>/.gemini-extension-install.json`.
 
 </details>
 
