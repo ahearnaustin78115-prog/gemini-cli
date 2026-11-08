@@ -32,6 +32,7 @@ import { getVersion, resolveModel } from '../../index.js';
 import type { LlmRole } from '../telemetry/llmRole.js';
 import { ModelMappingContentGenerator } from './modelMappingContentGenerator.js';
 import { getBackendModelMappings } from '../config/models.js';
+import { OpenAICompatibleContentGenerator } from './openAICompatibleContentGenerator.js';
 
 /**
  * Interface abstracting the core functionalities for generating content and counting tokens.
@@ -67,6 +68,7 @@ export enum AuthType {
   LEGACY_CLOUD_SHELL = 'cloud-shell',
   COMPUTE_ADC = 'compute-default-credentials',
   GATEWAY = 'gateway',
+  OPENAI_COMPATIBLE = 'openai-compatible',
 }
 
 /**
@@ -89,6 +91,12 @@ export function getAuthTypeFromEnv(): AuthType | undefined {
   }
   if (process.env['GEMINI_API_KEY']) {
     return AuthType.USE_GEMINI;
+  }
+  if (
+    process.env['OPENAI_BASE_URL'] ||
+    process.env['OPENAI_API_KEY']
+  ) {
+    return AuthType.OPENAI_COMPATIBLE;
   }
   if (
     process.env['CLOUD_SHELL'] === 'true' ||
@@ -171,6 +179,14 @@ export async function createContentGeneratorConfig(
     return contentGeneratorConfig;
   }
 
+  if (authType === AuthType.OPENAI_COMPATIBLE) {
+    contentGeneratorConfig.apiKey = getEnv('OPENAI_API_KEY') || undefined;
+    contentGeneratorConfig.baseUrl =
+      baseUrl || getEnv('OPENAI_BASE_URL') || 'https://api.openai.com/v1';
+    contentGeneratorConfig.vertexai = false;
+    return contentGeneratorConfig;
+  }
+
   const geminiApiKey =
     apiKey || getEnv('GEMINI_API_KEY') || (await loadApiKey()) || undefined;
   const googleApiKey = getEnv('GOOGLE_API_KEY') || undefined;
@@ -225,6 +241,16 @@ export async function createContentGenerator(
         gcConfig.fakeResponses,
       );
       return new LoggingContentGenerator(fakeGenerator, gcConfig);
+    }
+    if (config.authType === AuthType.OPENAI_COMPATIBLE) {
+      return new LoggingContentGenerator(
+        new OpenAICompatibleContentGenerator(
+          config.apiKey,
+          config.baseUrl || 'https://api.openai.com/v1',
+          process.env['OPENAI_MODEL'] || gcConfig.getModel(),
+        ),
+        gcConfig,
+      );
     }
     const version = await getVersion();
     const model = resolveModel(
