@@ -1,0 +1,14 @@
+services:
+  gemini-cli:
+    image: ghcr.io/google/gemini-cli:latest
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    volumes:
+      - .:/workspace
+      - gemini_home:/home/node/.gemini
+
+volumes:
+  gemini_home:

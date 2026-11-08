@@ -27,6 +27,33 @@ You'll be prompted to accept the Gemma Terms of Use. The model is ~1 GB.
 After setup, **just use the CLI normally** — routing happens automatically on
 every request.
 
+## Docker Compose
+
+The repository includes
+[`docker-compose.gemma.yml`](../../docker-compose.gemma.yml) for running Gemini
+CLI and its local LiteRT-LM router in a container. From the directory containing
+the Compose file, run:
+
+```bash
+# Downloads the LiteRT-LM runtime and model, and configures this workspace.
+docker compose -f docker-compose.gemma.yml run --rm gemini-cli gemma setup
+
+# Starts Gemini CLI; the local model server starts automatically.
+docker compose -f docker-compose.gemma.yml run --rm gemini-cli
+```
+
+Setup interactively prompts you to accept the
+[Gemma Terms of Use](https://ai.google.dev/gemma/terms) before downloading the
+model. The Compose service keeps the CLI's home directory (including the
+downloaded runtime and model) in a named volume and mounts the current directory
+as its workspace. Set `GEMINI_API_KEY` in your shell if using API-key
+authentication; otherwise, authenticate interactively and the credentials are
+retained in the home volume.
+
+The current `gemini gemma setup` installer supports Linux x86_64 only. The
+LiteRT server runs inside the same container as Gemini CLI, so no host port
+mapping is needed.
+
 ## Commands
 
 | Command               | What it does                                                   |
