@@ -23,6 +23,7 @@ Select the authentication method that matches your situation in the table below:
 | Individual Google accounts                                             | [Sign in with Google](#login-google)                             | No, with exceptions                                         |
 | Organization users with a company, school, or Google Workspace account | [Sign in with Google](#login-google)                             | [Yes](#set-gcp)                                             |
 | AI Studio user with a Gemini API key                                   | [Use Gemini API Key](#gemini-api)                                | No                                                          |
+| OpenAI or OpenAI-compatible endpoint                                  | [OpenAI-compatible API](#openai-compatible)                      | Depends on provider                                         |
 | Google Cloud Vertex AI user                                            | [Vertex AI](#vertex-ai)                                          | [Yes](#set-gcp)                                             |
 | [Headless mode](#headless)                                             | [Use Gemini API Key](#gemini-api) or<br /> [Vertex AI](#vertex-ai) | No (for Gemini API Key)<br /> [Yes](#set-gcp) (for Vertex AI) |
 
@@ -119,6 +120,27 @@ To authenticate and use Gemini CLI with a Gemini API key:
 > Treat API keys, especially for services like Gemini, as sensitive
 > credentials. Protect them to prevent unauthorized access and potential misuse
 > of the service under your account.
+
+## OpenAI-compatible API <a id="openai-compatible"></a>
+
+Gemini CLI can connect to OpenAI's API or an endpoint that implements the
+OpenAI chat completions API, such as a local vLLM server. Set `OPENAI_API_KEY`
+for OpenAI, or set `OPENAI_BASE_URL` for a compatible endpoint. Set
+`OPENAI_MODEL` to the model name served by the endpoint.
+
+For example, for a local vLLM server listening on port 8000:
+
+```bash
+export OPENAI_BASE_URL="http://localhost:8000/v1"
+export OPENAI_API_KEY="not-needed-by-this-server"
+export OPENAI_MODEL="Qwen/Qwen3-0.6B"
+gemini
+```
+
+Select **OpenAI-compatible API** when prompted. The API key can be omitted if
+the endpoint does not require authentication. This integration supports chat
+completions, tool calls, and images when the endpoint supports them. Token
+counts are estimated locally; embeddings are not supported.
 
 ## Use Vertex AI <a id="vertex-ai"></a>
 

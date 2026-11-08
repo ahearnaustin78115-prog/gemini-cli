@@ -45,5 +45,16 @@ export async function validateAuthMethod(
     return null;
   }
 
+  if (authMethod === AuthType.OPENAI_COMPATIBLE) {
+    if (!process.env['OPENAI_API_KEY'] && !process.env['OPENAI_BASE_URL']) {
+      return (
+        'When using an OpenAI-compatible provider, specify OPENAI_API_KEY for OpenAI or ' +
+        'OPENAI_BASE_URL for a compatible endpoint.\n' +
+        'Update your environment and try again (no reload needed if using .env)!'
+      );
+    }
+    return null;
+  }
+
   return 'Invalid auth method selected.';
 }

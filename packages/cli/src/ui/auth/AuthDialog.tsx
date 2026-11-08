@@ -72,6 +72,11 @@ export function AuthDialog({
       key: AuthType.USE_GEMINI,
     },
     {
+      label: 'OpenAI-compatible API',
+      value: AuthType.OPENAI_COMPATIBLE,
+      key: AuthType.OPENAI_COMPATIBLE,
+    },
+    {
       label: 'Vertex AI',
       value: AuthType.USE_VERTEX_AI,
       key: AuthType.USE_VERTEX_AI,

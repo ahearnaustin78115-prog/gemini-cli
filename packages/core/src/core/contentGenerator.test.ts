@@ -51,6 +51,8 @@ const mockConfig = {
 describe('getAuthTypeFromEnv', () => {
   beforeEach(() => {
     vi.stubEnv('GEMINI_API_KEY', '');
+    vi.stubEnv('OPENAI_API_KEY', '');
+    vi.stubEnv('OPENAI_BASE_URL', '');
   });
 
   afterEach(() => {
@@ -77,6 +79,11 @@ describe('getAuthTypeFromEnv', () => {
     expect(getAuthTypeFromEnv()).toBe(AuthType.USE_GEMINI);
   });
 
+  it('should detect OPENAI_COMPATIBLE when OpenAI-compatible settings are present', () => {
+    vi.stubEnv('OPENAI_BASE_URL', 'http://localhost:8000/v1');
+    expect(getAuthTypeFromEnv()).toBe(AuthType.OPENAI_COMPATIBLE);
+  });
+
   it('should detect COMPUTE_ADC when CLOUD_SHELL is true', () => {
     vi.stubEnv('CLOUD_SHELL', 'true');
     expect(getAuthTypeFromEnv()).toBe(AuthType.COMPUTE_ADC);
@@ -97,6 +104,20 @@ describe('createContentGenerator', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+  });
+
+  it('should create an OpenAI-compatible content generator', async () => {
+    const generator = await createContentGenerator(
+      {
+        apiKey: 'test-api-key',
+        baseUrl: 'http://localhost:8000/v1',
+        authType: AuthType.OPENAI_COMPATIBLE,
+      },
+      mockConfig,
+    );
+
+    expect(generator).toBeInstanceOf(LoggingContentGenerator);
+    expect(GoogleGenAI).not.toHaveBeenCalled();
   });
 
   it('should create a FakeContentGenerator', async () => {
@@ -1433,6 +1454,21 @@ describe('createContentGeneratorConfig', () => {
     );
     expect(config.apiKey).toBe('env-gemini-key');
     expect(config.vertexai).toBe(false);
+  });
+
+  it('should configure the OpenAI-compatible provider without loading a Gemini API key', async () => {
+    vi.stubEnv('OPENAI_API_KEY', 'openai-key');
+    vi.stubEnv('OPENAI_BASE_URL', 'http://localhost:8000/v1');
+    const config = await createContentGeneratorConfig(
+      mockConfig,
+      AuthType.OPENAI_COMPATIBLE,
+    );
+    expect(config).toMatchObject({
+      apiKey: 'openai-key',
+      baseUrl: 'http://localhost:8000/v1',
+      vertexai: false,
+    });
+    expect(loadApiKey).not.toHaveBeenCalled();
   });
 
   it('should not configure for Gemini if GEMINI_API_KEY is empty', async () => {

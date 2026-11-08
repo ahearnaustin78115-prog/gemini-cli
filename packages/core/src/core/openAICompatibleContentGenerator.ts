@@ -21,12 +21,20 @@ function isRecord(value: unknown): value is JsonRecord {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function recordOf(value: unknown): JsonRecord {
+  return isRecord(value) ? value : {};
+}
+
 function asRecords(value: unknown): JsonRecord[] {
   return Array.isArray(value) ? value.filter(isRecord) : [];
 }
 
 function stringValue(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;
+}
+
+function numberValue(value: unknown): number | undefined {
+  return typeof value === 'number' ? value : undefined;
 }
 
 function contentParts(contents: unknown): JsonRecord[] {
@@ -53,7 +61,9 @@ function textFrom(value: unknown): string {
   if (!isRecord(value)) {
     return '';
   }
-  return contentParts([value]).map((part) => stringValue(part['text']) ?? '').join('');
+  return contentParts([value])
+    .map((part) => stringValue(part['text']) ?? '')
+    .join('');
 }
 
 function imageUrl(part: JsonRecord): string | undefined {
@@ -103,8 +113,7 @@ function toolDeclarations(tools: unknown): JsonRecord[] {
         function: {
           name,
           description: stringValue(declaration['description']),
-          parameters:
-            declaration['parametersJsonSchema'] ??
+          parameters: declaration['parametersJsonSchema'] ??
             declaration['parameters'] ?? { type: 'object', properties: {} },
         },
       },
@@ -113,7 +122,7 @@ function toolDeclarations(tools: unknown): JsonRecord[] {
 }
 
 function toOpenAIMessages(request: GenerateContentParameters): JsonRecord[] {
-  const requestRecord = request as unknown as JsonRecord;
+  const requestRecord = recordOf(request);
   const config = isRecord(requestRecord['config'])
     ? requestRecord['config']
     : {};
@@ -163,8 +172,7 @@ function toOpenAIMessages(request: GenerateContentParameters): JsonRecord[] {
       if (!call || !name) {
         return [];
       }
-      const id =
-        stringValue(call['id']) ?? `call_${name}_${generatedToolId++}`;
+      const id = stringValue(call['id']) ?? `call_${name}_${generatedToolId++}`;
       toolIdsByName.set(name, id);
       return [
         {
@@ -185,8 +193,7 @@ function toOpenAIMessages(request: GenerateContentParameters): JsonRecord[] {
       if (!response || !name) {
         return [];
       }
-      const id =
-        stringValue(response['id']) ?? toolIdsByName.get(name) ?? name;
+      const id = stringValue(response['id']) ?? toolIdsByName.get(name) ?? name;
       return [
         {
           role: 'tool',
@@ -201,13 +208,15 @@ function toOpenAIMessages(request: GenerateContentParameters): JsonRecord[] {
     }
     if (text || images.length > 0 || calls.length > 0) {
       const message: JsonRecord = {
-        role: role === 'model' ? 'assistant' : role === 'system' ? 'system' : 'user',
+        role:
+          role === 'model'
+            ? 'assistant'
+            : role === 'system'
+              ? 'system'
+              : 'user',
         content:
           images.length > 0
-            ? [
-                ...(text ? [{ type: 'text', text }] : []),
-                ...images,
-              ]
+            ? [...(text ? [{ type: 'text', text }] : []), ...images]
             : text || null,
       };
       if (calls.length > 0) {
@@ -253,6 +262,8 @@ function response(
   usage?: unknown,
 ): GenerateContentResponse {
   const usageRecord = isRecord(usage) ? usage : {};
+  const promptTokens = numberValue(usageRecord['prompt_tokens']);
+  const completionTokens = numberValue(usageRecord['completion_tokens']);
   const candidate: JsonRecord = {
     content: { role: 'model', parts },
     finishReason:
@@ -264,20 +275,19 @@ function response(
   };
   const responseRecord: JsonRecord = {
     candidates: [candidate],
-    ...(typeof usageRecord['prompt_tokens'] === 'number' ||
-    typeof usageRecord['completion_tokens'] === 'number'
+    ...(promptTokens !== undefined || completionTokens !== undefined
       ? {
           usageMetadata: {
-            promptTokenCount: usageRecord['prompt_tokens'],
-            candidatesTokenCount: usageRecord['completion_tokens'],
-            totalTokenCount: usageRecord['total_tokens'],
+            promptTokenCount: promptTokens,
+            candidatesTokenCount: completionTokens,
+            totalTokenCount: numberValue(usageRecord['total_tokens']),
           },
         }
       : {}),
   };
   // The provider response is converted to the Google GenAI shape consumed by GeminiChat.
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-  return responseRecord as GenerateContentResponse;
+  return responseRecord as unknown as GenerateContentResponse;
 }
 
 export class OpenAICompatibleContentGenerator implements ContentGenerator {
@@ -293,7 +303,9 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
     const result = await this.request(request, false);
     const payload: unknown = await result.json();
     if (!isRecord(payload)) {
-      throw new Error('OpenAI-compatible endpoint returned an invalid response.');
+      throw new Error(
+        'OpenAI-compatible endpoint returned an invalid response.',
+      );
     }
     const choices = asRecords(payload['choices']);
     const choice = choices[0];
@@ -323,7 +335,9 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     const result = await this.request(request, true);
     if (!result.body) {
-      throw new Error('OpenAI-compatible endpoint did not return a response stream.');
+      throw new Error(
+        'OpenAI-compatible endpoint did not return a response stream.',
+      );
     }
     return this.readStream(result.body);
   }
@@ -331,7 +345,7 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
   async countTokens(
     request: CountTokensParameters,
   ): Promise<CountTokensResponse> {
-    const record = request as unknown as JsonRecord;
+    const record = recordOf(request);
     const tokens = estimateTokenCountSync(contentParts(record['contents']));
     return { totalTokens: tokens };
   }
@@ -357,10 +371,10 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
       'Content-Type': 'application/json',
     };
     if (this.apiKey) {
-      headers['Authorization'] = `******;
+      headers['Authorization'] = ['Bearer ', this.apiKey].join('');
     }
 
-    const record = request as unknown as JsonRecord;
+    const record = recordOf(request);
     const config = isRecord(record['config']) ? record['config'] : {};
     const body: JsonRecord = {
       model: this.model,
@@ -409,7 +423,9 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
     let finishReason: string | undefined;
     let usage: unknown;
 
-    const processEvent = (data: string): GenerateContentResponse | undefined => {
+    const processEvent = (
+      data: string,
+    ): GenerateContentResponse | undefined => {
       if (!data || data === '[DONE]') {
         return undefined;
       }
@@ -432,8 +448,7 @@ export class OpenAICompatibleContentGenerator implements ContentGenerator {
         parts.push({ text });
       }
       for (const tool of asRecords(delta['tool_calls'])) {
-        const index =
-          typeof tool['index'] === 'number' ? tool['index'] : calls.size;
+        const index = numberValue(tool['index']) ?? calls.size;
         const current = calls.get(index) ?? { function: {} };
         const fn = isRecord(current['function']) ? current['function'] : {};
         const deltaFn = isRecord(tool['function']) ? tool['function'] : {};

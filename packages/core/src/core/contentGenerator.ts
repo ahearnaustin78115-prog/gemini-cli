@@ -78,6 +78,7 @@ export enum AuthType {
  * 1. GOOGLE_GENAI_USE_GCA=true -> LOGIN_WITH_GOOGLE
  * 2. GOOGLE_GENAI_USE_VERTEXAI=true -> USE_VERTEX_AI
  * 3. GEMINI_API_KEY -> USE_GEMINI
+ * 4. OPENAI_API_KEY or OPENAI_BASE_URL -> OPENAI_COMPATIBLE
  */
 export function getAuthTypeFromEnv(): AuthType | undefined {
   if (process.env['GOOGLE_GENAI_USE_GCA'] === 'true') {
@@ -92,10 +93,7 @@ export function getAuthTypeFromEnv(): AuthType | undefined {
   if (process.env['GEMINI_API_KEY']) {
     return AuthType.USE_GEMINI;
   }
-  if (
-    process.env['OPENAI_BASE_URL'] ||
-    process.env['OPENAI_API_KEY']
-  ) {
+  if (process.env['OPENAI_BASE_URL'] || process.env['OPENAI_API_KEY']) {
     return AuthType.OPENAI_COMPATIBLE;
   }
   if (
@@ -247,7 +245,9 @@ export async function createContentGenerator(
         new OpenAICompatibleContentGenerator(
           config.apiKey,
           config.baseUrl || 'https://api.openai.com/v1',
-          process.env['OPENAI_MODEL'] || gcConfig.getModel(),
+          gcConfig.env?.['OPENAI_MODEL'] ||
+            process.env['OPENAI_MODEL'] ||
+            gcConfig.getModel(),
         ),
         gcConfig,
       );

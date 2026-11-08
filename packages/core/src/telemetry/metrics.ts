@@ -757,6 +757,7 @@ export enum GenAiOperationName {
 export enum GenAiProviderName {
   GCP_GEN_AI = 'gcp.gen_ai',
   GCP_VERTEX_AI = 'gcp.vertex_ai',
+  OPENAI = 'openai',
 }
 
 export enum GenAiTokenType {
@@ -1280,6 +1281,8 @@ export function getConventionAttributes(event: {
  */
 function getGenAiProvider(authType?: string): GenAiProviderName {
   switch (authType) {
+    case AuthType.OPENAI_COMPATIBLE:
+      return GenAiProviderName.OPENAI;
     case AuthType.USE_VERTEX_AI:
     case AuthType.COMPUTE_ADC:
     case AuthType.LOGIN_WITH_GOOGLE:

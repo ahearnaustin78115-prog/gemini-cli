@@ -30,6 +30,8 @@ describe('validateAuthMethod', () => {
     vi.stubEnv('GOOGLE_CLOUD_PROJECT', undefined);
     vi.stubEnv('GOOGLE_CLOUD_LOCATION', undefined);
     vi.stubEnv('GOOGLE_API_KEY', undefined);
+    vi.stubEnv('OPENAI_API_KEY', undefined);
+    vi.stubEnv('OPENAI_BASE_URL', undefined);
   });
 
   afterEach(() => {
@@ -90,6 +92,29 @@ describe('validateAuthMethod', () => {
         'When using Vertex AI, you must specify either:\n' +
         '• GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION environment variables.\n' +
         '• GOOGLE_API_KEY environment variable (if using express mode).\n' +
+        'Update your environment and try again (no reload needed if using .env)!',
+    },
+    {
+      description: 'should return null for OPENAI_COMPATIBLE with an API key',
+      authType: AuthType.OPENAI_COMPATIBLE,
+      envs: { OPENAI_API_KEY: 'test-api-key' },
+      expected: null,
+    },
+    {
+      description:
+        'should return null for OPENAI_COMPATIBLE with a custom base URL',
+      authType: AuthType.OPENAI_COMPATIBLE,
+      envs: { OPENAI_BASE_URL: 'http://localhost:8000/v1' },
+      expected: null,
+    },
+    {
+      description:
+        'should return an error for OPENAI_COMPATIBLE without provider settings',
+      authType: AuthType.OPENAI_COMPATIBLE,
+      envs: {},
+      expected:
+        'When using an OpenAI-compatible provider, specify OPENAI_API_KEY for OpenAI or ' +
+        'OPENAI_BASE_URL for a compatible endpoint.\n' +
         'Update your environment and try again (no reload needed if using .env)!',
     },
     {
