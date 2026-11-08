@@ -1,0 +1,12 @@
+[experimental.pgdelta]
+enabled = false
+
+[local_smtp]
+enabled = true
+port = 54324
+
+[auth.external.apple]
+enabled = false
+client_id = ""
+secret = ""
+redirect_uri = ""
