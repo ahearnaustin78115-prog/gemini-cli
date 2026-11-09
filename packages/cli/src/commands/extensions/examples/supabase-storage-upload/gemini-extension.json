@@ -1,0 +1,34 @@
+{
+  "name": "supabase-storage-upload",
+  "version": "1.0.0",
+  "settings": [
+    {
+      "name": "Supabase project URL",
+      "description": "The HTTPS URL of the Supabase project.",
+      "envVar": "SUPABASE_URL"
+    },
+    {
+      "name": "Supabase publishable key",
+      "description": "The project's publishable key.",
+      "envVar": "SUPABASE_PUBLISHABLE_KEY"
+    },
+    {
+      "name": "Storage bucket",
+      "description": "The bucket to upload files into; the user JWT must have permission to insert objects.",
+      "envVar": "SUPABASE_STORAGE_BUCKET"
+    },
+    {
+      "name": "Supabase user access token",
+      "description": "A valid user JWT with permission to upload. Do not use a service-role or secret key.",
+      "envVar": "SUPABASE_BEARER_TOKEN",
+      "sensitive": true
+    }
+  ],
+  "mcpServers": {
+    "supabaseStorage": {
+      "command": "node",
+      "args": ["${extensionPath}${/}server.js"],
+      "cwd": "${extensionPath}"
+    }
+  }
+}

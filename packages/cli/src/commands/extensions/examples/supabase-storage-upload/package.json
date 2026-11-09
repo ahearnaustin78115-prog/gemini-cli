@@ -1,0 +1,17 @@
+{
+  "name": "supabase-storage-upload",
+  "version": "1.0.0",
+  "description": "Gemini CLI MCP extension example for resumable Supabase Storage uploads",
+  "type": "module",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.0",
+    "zod": "4.6.6"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}
