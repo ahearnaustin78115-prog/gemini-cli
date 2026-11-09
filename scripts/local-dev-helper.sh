@@ -167,6 +167,9 @@ dump_data() {
 validate_adb_target() {
   local target=$1
   [[ "$target" == *:* ]] || fail "expected a device address in host:port format"
+  local host=${target%:*}
+  [[ -n "$host" && "$host" != *[[:space:]]* ]] ||
+    fail "device address must include a host without whitespace"
   local port=${target##*:}
   [[ ${#port} -le 5 && "$port" =~ ^[0-9]+$ ]] ||
     fail "expected a valid port in the device address"
