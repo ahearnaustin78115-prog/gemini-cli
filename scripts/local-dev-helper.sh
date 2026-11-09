@@ -9,9 +9,12 @@ Usage:
   local-dev-helper.sh db-diff <migration-name>
   local-dev-helper.sh db-dump
   local-dev-helper.sh stop
+  local-dev-helper.sh android <diagnose|devices|pair|connect|disconnect|restart-server|install> [args]
 
 The Supabase commands run in the current directory. `db-dump` writes
 data-only SQL to supabase/seed.sql, and `stop` runs `supabase stop --no-backup`.
+Android commands use the Android SDK's `adb`; `pair` prompts for the device's
+pairing code, and `diagnose` reports the ADB version, server, and connected devices.
 EOF
 }
 
@@ -161,6 +164,66 @@ dump_data() {
   fi
 }
 
+validate_adb_target() {
+  local target=$1
+  [[ "$target" == *:* ]] || fail "expected a device address in host:port format"
+  local port=${target##*:}
+  [[ ${#port} -le 5 && "$port" =~ ^[0-9]+$ ]] ||
+    fail "expected a valid port in the device address"
+  (( 10#$port >= 1 && 10#$port <= 65535 )) ||
+    fail "device address port must be between 1 and 65535"
+}
+
+android_helper() {
+  [[ $# -gt 0 ]] || fail "android requires a subcommand"
+  local command=$1
+  shift
+  require_command adb
+
+  case "$command" in
+    diagnose)
+      [[ $# -eq 0 ]] || fail "android diagnose does not accept arguments"
+      adb version
+      adb server-status
+      adb devices -l
+      ;;
+    devices)
+      [[ $# -eq 0 ]] || fail "android devices does not accept arguments"
+      adb devices -l
+      ;;
+    pair|connect)
+      [[ $# -eq 1 ]] || fail "android $command requires one host:port address"
+      validate_adb_target "$1"
+      adb "$command" "$1"
+      ;;
+    disconnect)
+      [[ $# -le 1 ]] || fail "android disconnect accepts at most one host:port address"
+      if [[ $# -eq 1 ]]; then
+        validate_adb_target "$1"
+        adb disconnect "$1"
+      else
+        adb disconnect
+      fi
+      ;;
+    restart-server)
+      [[ $# -eq 0 ]] || fail "android restart-server does not accept arguments"
+      adb kill-server
+      adb start-server
+      ;;
+    install)
+      [[ $# -eq 1 ]] || fail "android install requires exactly one APK file"
+      [[ -f "$1" ]] || fail "APK file not found: $1"
+      local extension=${1##*.}
+      extension=$(printf '%s' "$extension" | tr '[:upper:]' '[:lower:]')
+      [[ "$extension" == apk ]] || fail "android install expects an .apk file"
+      adb install "$1"
+      ;;
+    *)
+      fail "unknown android subcommand: $command"
+      ;;
+  esac
+}
+
 [[ $# -gt 0 ]] || {
   usage >&2
   exit 2
@@ -192,6 +255,9 @@ case "$action" in
     [[ $# -eq 0 ]] || fail "stop does not accept arguments"
     require_command supabase
     supabase stop --no-backup
+    ;;
+  android)
+    android_helper "$@"
     ;;
   -h|--help)
     usage
